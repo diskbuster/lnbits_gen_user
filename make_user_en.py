@@ -4,24 +4,28 @@ import csv
 import json
 import logging
 import secrets
+import os
 from pathlib import Path
 from mnemonic import Mnemonic
 from bip_utils import Bip39SeedGenerator, Bip32Slip10Secp256k1
 from bech32 import bech32_encode, convertbits
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
 # === KONFIGURATION ===
-LNBits_API_BASE = "https://lnbits.nsnip.io"
+load_dotenv()
+
+LNBits_API_BASE = os.getenv("LNBITS_API_BASE")
 LNBits_LOGIN_URL = f"{LNBits_API_BASE}/api/v1/auth"
 LNBits_CREATE_URL = f"{LNBits_API_BASE}/api/v1/account"
 LNBits_USER_UPDATE_URL = f"{LNBits_API_BASE}/users/api/v1/user"
 LNBits_NIP5_PUBLIC_URL = f"{LNBits_API_BASE}/nostrnip5/api/v1/public/domain"
 LNBits_NWC_PAIRING_URL = f"{LNBits_API_BASE}/nwcprovider/api/v1/pairing"
-NWC_PROVIDER_PUBKEY = "7bea3415250cd3c37d6094d226bd236713939c9b82b3897579f5baa52d517d6b"
-DOMAIN = "nsnip.io"
-DOMAIN_ID = "jUGMtFMYzA2e4w7wmnfaWj"
-ADMIN_USERNAME = "superadmin"
-ADMIN_PASSWORD = "M0insen!23"
+
+ADMIN_USERNAME = os.getenv("LNBITS_USERNAME")
+ADMIN_PASSWORD = os.getenv("LNBITS_PASSWORD")
+DOMAIN = os.getenv("DOMAIN")
+DOMAIN_ID = os.getenv("DOMAIN_ID")
 
 CSV_ACCOUNTS = Path("lnbits_accounts.csv")
 CSV_WALLETS = Path("lnbits_wallets.csv")
