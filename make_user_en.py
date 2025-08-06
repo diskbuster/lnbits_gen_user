@@ -22,8 +22,8 @@ LNBits_USER_UPDATE_URL = f"{LNBits_API_BASE}/users/api/v1/user"
 LNBits_NIP5_PUBLIC_URL = f"{LNBits_API_BASE}/nostrnip5/api/v1/public/domain"
 LNBits_NWC_PAIRING_URL = f"{LNBits_API_BASE}/nwcprovider/api/v1/pairing"
 
-ADMIN_USERNAME = os.getenv("LNBITS_USERNAME")
-ADMIN_PASSWORD = os.getenv("LNBITS_PASSWORD")
+ADMIN_USERNAME = os.getenv("LNBITS_ADMIN_USERNAME")
+ADMIN_PASSWORD = os.getenv("LNBITS_ADMIN_PASSWORD")
 DOMAIN = os.getenv("DOMAIN")
 DOMAIN_ID = os.getenv("DOMAIN_ID")
 
