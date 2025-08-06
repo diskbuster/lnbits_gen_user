@@ -2,6 +2,10 @@
 
 This script allows you to **automatically create LNbits users** with optional Nostr keys, LNURLp payment links, LNDHub admin URLs, and NWC (Nostr Wallet Connect) connections — just like using the LNbits UI.
 
+Usecase could be for fast onboarding peers of people with premined nostr identitys and associated wallets. therefore a secrets.csv will be created with all needed onboading information to connect via different clients.
+
+ 
+
 ---
 
 ## ✨ Features
