@@ -145,68 +145,67 @@ def configure_lnaddress_public(username, pubkey):
 import re  # Wichtig für Pubkey-Extraktion aus der URL
 
 from coincurve import PrivateKey
+from datetime import datetime, UTC
+from hashlib import sha256
 
 def create_nwc_key(username, wallet_id, created_at, lnbits_url, session, user_api_key):
-	logger = logging.getLogger(__name__)
-	logger.debug("\n" + "=" * 80)
-	logger.debug(f"🔑 [NWC] Starting NWC key creation for user: {username}")
-	logger.debug(f"🔧 Wallet ID: {wallet_id}")
-	logger.debug(f"🔐 User AdminKey: {user_api_key}")
-	logger.debug(f"📅 Timestamp (created_at): {created_at}")
-	logger.debug("=" * 80 + "\n")
+    logger = logging.getLogger(__name__)
+    logger.debug("\n" + "=" * 80)
+    logger.debug(f"🔑 [NWC] Starting NWC key creation for user: {username}")
+    logger.debug(f"🔧 Wallet ID: {wallet_id}")
+    logger.debug(f"🔐 User AdminKey: {user_api_key}")
+    logger.debug(f"📅 Timestamp (created_at): {created_at}")
+    logger.debug("=" * 80 + "\n")
 
-	# ✅ Step 1: generate random 32-byte secret (private key)
-	secret = secrets.token_bytes(32)
-	privkey_hex = secret.hex()
-	privkey = PrivateKey(secret)
-	pubkey_compressed = privkey.public_key.format(compressed=True)
-	pubkey_hex = pubkey_compressed[1:].hex()  # remove 0x02/0x03 prefix
+    # ✅ 32 random bytes = NWC-Secret
+    secret_bytes = secrets.token_bytes(32)
+    privkey = PrivateKey(secret_bytes)  # Der Secret ist auch der PrivateKey
+    pubkey_hex = privkey.public_key.format(compressed=True).hex()
+    secret_hex = secret_bytes.hex()
 
-	logger.debug(f"📡 Step 1: Generated secp256k1 keypair")
-	logger.debug(f"🔑 Private key (hex): {privkey_hex}")
-	logger.debug(f"🔓 Public key (hex, no prefix): {pubkey_hex}")
+    logger.debug("📡 Schritt 1: secp256k1 Schlüsselpaar generiert")
+    logger.debug(f"🔐 Secret (privkey, hex): {secret_hex}")
+    logger.debug(f"🔓 Public Key (komprimiert): {pubkey_hex}")
 
-	# Step 2: Send PUT request to create NWC key
-	put_url = f"{lnbits_url}/nwcprovider/api/v1/nwc/{pubkey_hex}"
-	headers = {
-		"Content-Type": "application/json",
-		"X-Api-Key": user_api_key
-	}
-	payload = {
-		"description": username,
-		"expires_at": 0,
-		"permissions": [
-			"pay", "invoice", "lookup", "history", "balance", "info"
-		],
-		"budgets": [
-			{
-				"pubkey": pubkey_hex,
-				"budget_msats": 0,
-				"refresh_window": 86400,
-				"created_at": created_at
-			}
-		]
-	}
+    put_url = f"{lnbits_url}/nwcprovider/api/v1/nwc/{pubkey_hex}"
+    headers = {
+        "Content-Type": "application/json",
+        "X-Api-Key": user_api_key
+    }
+    payload = {
+        "description": username,
+        "expires_at": 0,
+        "permissions": [
+            "pay", "invoice", "lookup", "history", "balance", "info"
+        ],
+        "budgets": [
+            {
+                "pubkey": pubkey_hex,
+                "budget_msats": 0,
+                "refresh_window": 86400,
+                "created_at": created_at
+            }
+        ],
+        "secret": secret_hex  # 🟢 Hier darf KEIN SHA256 stehen
+    }
 
-	logger.debug(f"\n🛠 Step 2: PUT request to create NWC key")
-	logger.debug(f"➡️  PUT {put_url}")
-	logger.debug(f"📤 Payload:\n{json.dumps(payload, indent=2)}")
+    logger.debug("\n🛠 Schritt 2: PUT-Request zum Erstellen des NWC-Schlüssels")
+    logger.debug(f"➡️  PUT {put_url}")
+    logger.debug(f"📤 Payload:\n{json.dumps(payload, indent=2)}")
 
-	try:
-		resp = session.put(put_url, headers=headers, json=payload)
-		resp.raise_for_status()
-		logger.debug("✅ NWC key created successfully.")
-	except Exception as e:
-		logger.error(f"❌ Error creating NWC key: {e}")
-		logger.error(f"📄 Status: {getattr(resp, 'status_code', 'unknown')}")
-		logger.error(f"📄 Response: {getattr(resp, 'text', '')}")
-		return None, None, None
+    try:
+        resp = session.put(put_url, headers=headers, json=payload)
+        resp.raise_for_status()
+        logger.debug("✅ NWC-Schlüssel erfolgreich erstellt.")
+    except Exception as e:
+        logger.error(f"❌ Fehler beim Erstellen des NWC-Schlüssels: {e}")
+        logger.error(f"📄 Status: {getattr(resp, 'status_code', 'unknown')}")
+        logger.error(f"📄 Response: {getattr(resp, 'text', '')}")
+        return None, None, None
 
-	relay = "wss://lnbits.nsnip.io/nostrclient/api/v1/relay"
-	nwc_url = f"nostr+walletconnect://{pubkey_hex}?relay={relay}&secret={privkey_hex}"
-	logger.debug(f"\n🔗 Final NWC link: {nwc_url}")
-
-	return nwc_url, pubkey_hex, privkey_hex
+    nwc_url = build_nwc_link(pubkey_hex, secret_hex)
+    logger.debug(f"\n🔗 Finaler NWC-Link: {nwc_url}")
+    return nwc_url, pubkey_hex, secret_hex
 
 def create_lnurlp_link(username, wallet_id, adminkey):
     url = f"{LNBits_API_BASE}/lnurlp/api/v1/links"
