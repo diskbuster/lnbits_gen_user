@@ -13,27 +13,42 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # -----------------------------------------------------------------------------
-# CONFIG
+# CONFIG (strict: all values must be in .env)
 # -----------------------------------------------------------------------------
 load_dotenv()
 
-LNBits_API_BASE = os.getenv("LNBITS_API_BASE")
-LNBits_LOGIN_URL = f"{LNBits_API_BASE}/api/v1/auth"
-LNBits_CREATE_URL = f"{LNBits_API_BASE}/api/v1/account"
+def require_env(key: str) -> str:
+    v = os.getenv(key)
+    if not v or not v.strip():
+        raise SystemExit(f"ENV error: '{key}' is required in .env")
+    return v.strip()
+
+# Base + endpoints
+LNBits_API_BASE        = require_env("LNBITS_API_BASE")
+LNBits_LOGIN_URL       = f"{LNBits_API_BASE}/api/v1/auth"
+LNBits_CREATE_URL      = f"{LNBits_API_BASE}/api/v1/account"
 LNBits_USER_UPDATE_URL = f"{LNBits_API_BASE}/users/api/v1/user"
 LNBits_NIP5_PUBLIC_URL = f"{LNBits_API_BASE}/nostrnip5/api/v1/public/domain"
 LNBits_NWC_PAIRING_URL = f"{LNBits_API_BASE}/nwcprovider/api/v1/pairing"
 
-ADMIN_USERNAME = os.getenv("LNBITS_ADMIN_USERNAME")
-ADMIN_PASSWORD = os.getenv("LNBITS_ADMIN_PASSWORD")
-DOMAIN = os.getenv("DOMAIN")
-DOMAIN_ID = os.getenv("DOMAIN_ID")
+# Credentials & domain
+ADMIN_USERNAME = require_env("LNBITS_ADMIN_USERNAME")
+ADMIN_PASSWORD = require_env("LNBITS_ADMIN_PASSWORD")
+DOMAIN         = require_env("DOMAIN")
+DOMAIN_ID      = require_env("DOMAIN_ID")
 
-CSV_ACCOUNTS = Path("lnbits_accounts.csv")
-CSV_WALLETS = Path("lnbits_wallets.csv")
-CSV_SECRETS = Path("lnbits_secrets.csv")
-CSV_KEYSOURCE = Path("mnemonic.csv")
-LOG_FILE = Path("lnbits_user_creation.log")
+# Relays (strict)
+NWC_RELAY_URL = require_env("NWC_RELAY_URL")  # must start with wss://
+NIP5_RELAYS   = [r.strip() for r in require_env("NIP5_RELAYS").split(",") if r.strip()]
+if not NWC_RELAY_URL.startswith("wss://"):
+    raise SystemExit("ENV error: NWC_RELAY_URL must start with wss://")
+
+# File paths (strict; from .env only)
+CSV_ACCOUNTS  = Path(require_env("CSV_ACCOUNTS"))
+CSV_WALLETS   = Path(require_env("CSV_WALLETS"))
+CSV_SECRETS   = Path(require_env("CSV_SECRETS"))
+CSV_KEYSOURCE = Path(require_env("CSV_KEYSOURCE"))
+LOG_FILE      = Path(require_env("LOG_FILE"))
 
 # -----------------------------------------------------------------------------
 # LOGGING
@@ -181,7 +196,7 @@ def configure_lnaddress_public(username, pubkey):
         "local_part": username,
         "pubkey": pubkey,
         "years": 1,
-        "relays": ["wss://relay.nsnip.io"],
+        "relays": NIP5_RELAYS,
         "create_invoice": True,
         "active": True,
         "is_locked": False
@@ -206,8 +221,7 @@ from coincurve import PrivateKey
 import re
 
 def build_nwc_link(pubkey, secret):
-    relay = "wss://lnbits.nsnip.io/nostrclient/api/v1/relay"
-    return f"nostr+walletconnect://{pubkey}?relay={relay}&secret={secret}"
+    return f"nostr+walletconnect://{pubkey}?relay={NWC_RELAY_URL}&secret={secret}"
 
 def verify_nwc_pairing(secret, expected_pubkey=None):
     section("[FUNCTION] verify_nwc_pairing")
