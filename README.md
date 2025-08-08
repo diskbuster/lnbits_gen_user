@@ -66,6 +66,17 @@ LNBITS_ADMIN_USERNAME=admin
 LNBITS_ADMIN_PASSWORD=secretpassword
 DOMAIN=yourdomain.com
 DOMAIN_ID=your_nip05_domain_id
+
+# Relays
+NWC_RELAY_URL=wss://<your-relay>/nostrclient/api/v1/relay
+NIP5_RELAYS=wss://relay1.example,wss://relay2.example
+
+# File paths (absolute oder relative Pfade)
+CSV_ACCOUNTS=lnbits_accounts.csv
+CSV_WALLETS=lnbits_wallets.csv
+CSV_SECRETS=lnbits_secrets.csv
+CSV_KEYSOURCE=mnemonic.csv
+LOG_FILE=lnbits_user_creation.log
 ```
 
 ---
